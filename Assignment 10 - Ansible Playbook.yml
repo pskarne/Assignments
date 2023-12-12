@@ -1,0 +1,57 @@
+---
+- hosts: webservers
+  user: velocity
+  become: yes
+  connection: ssh
+  gather_facts: yes
+
+  tasks:
+  - name: install-java
+    action: yum pkg=java-1.8.0-openjdk-devel.x86_64 state=present
+  
+  - name: install-maven
+    action: yum pkg=maven state=present
+  
+  - name: git-install
+    action: yum pkg=git state=present
+
+  - name: install apache tomcat
+    shell: | 
+      cd /mnt/
+      rm -rf *
+      wget https://dlcdn.apache.org/tomcat/tomcat-8/v8.5.96/bin/apache-tomcat-8.5.96.zip
+      unzip apache-tomcat-8.5.96.zip
+      chmod -R 777 apache-tomcat-8.5.96
+      rm -rf apache-tomcat-8.5.96.zip
+
+  - name: git-clone
+    shell: | 
+      cd /mnt/
+      git clone https://github.com/pskarne/game-of-life.git
+
+  - name: maven-build
+    shell: |
+      cd /mnt/game-of-life/
+      mvn clean install
+  
+  - name: .war file copy
+    shell: cp /mnt/game-of-life/gameoflife-web/target/gameoflife.war /mnt/apache-tomcat-8.5.96/webapps/
+
+  - name: start-tomcat-server
+    shell: |
+      #!/bin/bash
+      cd /mnt/apache-tomcat-8.5.96/bin/
+      sh /mnt/apache-tomcat-8.5.96/bin/startup.sh
+
+    # run this command manually to start tomcat server- ansible all -ba "sh /mnt/apache-tomcat-8.5.96/bin/startup.sh"
+    
+    #ansible.builtin.script: /mnt/apache-tomcat-8.5.96/bin/startup.sh
+    
+    #script: /mnt/apache-tomcat-8.5.96/bin/startup.sh
+    
+    #shell: |
+    #  cd /mnt/apache-tomcat-8.5.96/bin/
+    #  ./startup.sh
+    #  bash startup.sh
+
+    #bash /mnt/apache-tomcat-8.5.96/bin/startup.sh
